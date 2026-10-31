@@ -1,0 +1,19 @@
+# Geheimnisse und Daten niemals einchecken
+*.key
+*.pem
+id_*
+*.sql
+*.sql.gz
+*.tar.gz
+*.dump
+.env
+config.php
+.my.cnf
+secrets/
+*.bak
+
+# Editor / System
+.DS_Store
+*.swp
+.vscode/
+state.txt

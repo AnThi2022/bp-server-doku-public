@@ -1,0 +1,2 @@
+# Taegliche Bildkompression neuer Forum-Uploads um 04:00
+0 4 * * * root /usr/local/bin/forum_compress_daily.sh
