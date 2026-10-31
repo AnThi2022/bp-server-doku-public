@@ -9,7 +9,7 @@ flowchart LR
     U["Besucher / Browser"]
     A["Admin<br/>(SSH-Key)"]
     LE["Let's Encrypt<br/>(ACME)"]
-    DNS["DNS<br/>Haupt- und Weiterleitungsdomain"]
+    DNS["DNS<br/>beide Domains"]
     MAIL["Externer<br/>Mailserver (SMTP)"]
 
     subgraph HZ["Hetzner Cloud (fsn1)"]
