@@ -16,21 +16,21 @@ flowchart LR
     J --> K["11 Abnahme"]
 ```
 
-Platzhalter: `<DB_PASSWORT>` wird neu erzeugt und im Passwortmanager abgelegt, nie ins Repo. `${SSH_PORT}` ist ein frei gewählter SSH-Port. Vorlagen liegen unter `templates/`.
+Platzhalter: `<DB_PASSWORT>` wird neu erzeugt und im Passwortmanager abgelegt, nie ins Repo. `${SSH_PORT}` ist ein frei gewählter SSH-Port. `example.org` steht für die Hauptdomain des Forums, `example.com` für eine zusätzliche Domain, die per 301 auf die Hauptdomain umleitet. Vorlagen liegen unter `templates/`.
 
 ## 1. Server anlegen (Hetzner Cloud)
 
 - Image: Debian 13, Standort `fsn1`, ca. 2 vCPU / 4 GB RAM / 38 GB Disk, IPv4 + IPv6.
 - SSH-Public-Key des Admins bei der Erstellung hinterlegen.
-- DNS: `A`/`AAAA` für `bluemchenpfluecker.de`, `www.bluemchenpfluecker.de`, `bluemchenpfluecker.com`, `www.bluemchenpfluecker.com` auf die Server-IP.
-- Reverse-DNS (PTR) der IPv4 auf `www.bluemchenpfluecker.de` setzen.
+- DNS: `A`/`AAAA` für `example.org`, `www.example.org`, `example.com`, `www.example.com` auf die Server-IP.
+- Reverse-DNS (PTR) der IPv4 auf `www.example.org` setzen.
 
 ## 2. Basis und Hostname
 
 ```bash
 hostnamectl set-hostname bp
 # /etc/hosts: FQDN zuerst, dann Kurzname
-sed -i 's/^127\.0\.1\.1 .*/127.0.1.1 www.bluemchenpfluecker.de bp/' /etc/hosts
+sed -i 's/^127\.0\.1\.1 .*/127.0.1.1 www.example.org bp/' /etc/hosts
 install -m 644 templates/cloud-init/99-bluemchen-hostname.cfg /etc/cloud/cloud.cfg.d/
 apt update && apt full-upgrade -y
 ```
@@ -100,8 +100,8 @@ a2ensite forum
 
 ```bash
 certbot certonly --apache \
-  -d www.bluemchenpfluecker.de -d bluemchenpfluecker.de \
-  -d www.bluemchenpfluecker.com -d bluemchenpfluecker.com \
+  -d www.example.org -d example.org \
+  -d www.example.com -d example.com \
   --key-type ecdsa
 a2ensite forum-le-ssl
 apachectl configtest && systemctl reload apache2

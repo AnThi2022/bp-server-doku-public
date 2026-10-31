@@ -61,14 +61,14 @@ Für einen Neuaufbau aus Dateien und Dump (statt Komplett-Restore): siehe Schrit
 ## Abnahme nach Reboot oder Neuaufbau
 
 ```bash
-hostname; hostname -f                      # bp / www.bluemchenpfluecker.de
+hostname; hostname -f                      # bp / www.example.org
 systemctl --failed                         # leer
 systemctl is-active apache2 mariadb cron   # active
 ss -tlnp | grep -E ":(${SSH_PORT}|80|443|3306)"   # 3306 nur auf 127.0.0.1
 ufw status                                 # aktiv, 3 Regeln
-curl -sI https://www.bluemchenpfluecker.de/ | head -1      # 200
-curl -sI http://www.bluemchenpfluecker.de/  | head -1      # 301
-curl -sI https://bluemchenpfluecker.com/    | head -3      # 301 → .de
+curl -sI https://www.example.org/ | head -1      # 200
+curl -sI http://www.example.org/  | head -1      # 301
+curl -sI https://example.com/    | head -3      # 301 → www.example.org
 journalctl -b -p err --no-pager            # nur bekannte Meldungen
 df -h /                                    # Platz beobachten
 ```

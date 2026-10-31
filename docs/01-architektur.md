@@ -9,7 +9,7 @@ flowchart LR
     U["Besucher / Browser"]
     A["Admin<br/>(SSH-Key)"]
     LE["Let's Encrypt<br/>(ACME)"]
-    DNS["DNS<br/>.de und .com"]
+    DNS["DNS<br/>Haupt- und Weiterleitungsdomain"]
     MAIL["Externer<br/>Mailserver (SMTP)"]
 
     subgraph HZ["Hetzner Cloud (fsn1)"]
@@ -66,9 +66,9 @@ sequenceDiagram
     participant P as PHP / phpBB
     participant D as MariaDB
 
-    B->>A: GET http://bluemchenpfluecker.de/...
-    A-->>B: 301 → https://www.bluemchenpfluecker.de/...
-    B->>S: GET https://www.bluemchenpfluecker.de/...
+    B->>A: GET http://example.org/...
+    A-->>B: 301 → https://www.example.org/...
+    B->>S: GET https://www.example.org/...
     S->>P: mod_php führt index.php aus
     P->>D: SQL (localhost)
     D-->>P: Daten
@@ -76,7 +76,7 @@ sequenceDiagram
     S-->>B: 200
 ```
 
-`bluemchenpfluecker.com` / `www.bluemchenpfluecker.com` werden per 301 auf `https://www.bluemchenpfluecker.de` umgeleitet (ACME-Pfad `/.well-known/acme-challenge/` bleibt ausgenommen).
+`example.com` / `www.example.com` werden per 301 auf `https://www.example.org` umgeleitet (ACME-Pfad `/.well-known/acme-challenge/` bleibt ausgenommen).
 
 ## 4. Netzwerk und Ports
 
@@ -110,11 +110,11 @@ flowchart LR
     T["certbot.timer<br/>(systemd)"] --> C["certbot renew"]
     C -- "ACME HTTP-01" --> LE["Let's Encrypt"]
     LE -- "GET /.well-known/acme-challenge/" --> A["Apache :80"]
-    C --> F["/etc/letsencrypt/live/<br/>www.bluemchenpfluecker.de/"]
+    C --> F["/etc/letsencrypt/live/<br/>www.example.org/"]
     F --> A2["Apache :443<br/>fullchain.pem + privkey.pem"]
 ```
 
-Ein SAN-Zertifikat (ECDSA) für vier Namen: `www.bluemchenpfluecker.de`, `bluemchenpfluecker.de`, `www.bluemchenpfluecker.com`, `bluemchenpfluecker.com`.
+Ein SAN-Zertifikat (ECDSA) für vier Namen: `www.example.org`, `example.org`, `www.example.com`, `example.com`.
 
 ## 6. Verzeichnis- und Datenlayout
 

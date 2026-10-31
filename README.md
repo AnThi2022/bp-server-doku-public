@@ -35,4 +35,4 @@ Benötigt wird außerdem `firefox` (headless, rendert die Mermaid-Diagramme).
 
 - Nur Inhalte, die öffentlich sein dürfen: keine IP-Adressen, kein SSH-Port, keine Zugangsdaten, keine Sicherheitsbefunde zum laufenden System, keine Backups.
 - Neue Inhalte zuerst im privaten Repo erfassen, dann bereinigt hierher übernehmen.
-- Platzhalter statt Werte: `<DB_PASSWORT>`, `${SSH_PORT}`, `$SERVER`.
+- Platzhalter statt Werte: `<DB_PASSWORT>`, `${SSH_PORT}`, `$SERVER`; Domains als `example.org` (Hauptdomain) und `example.com` (Weiterleitungsdomain).
