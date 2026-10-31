@@ -31,7 +31,7 @@ Platzhalter: `<DB_PASSWORT>` wird neu erzeugt und im Passwortmanager abgelegt, n
 hostnamectl set-hostname bp
 # /etc/hosts: FQDN zuerst, dann Kurzname
 sed -i 's/^127\.0\.1\.1 .*/127.0.1.1 www.example.org bp/' /etc/hosts
-install -m 644 templates/cloud-init/99-bluemchen-hostname.cfg /etc/cloud/cloud.cfg.d/
+install -m 644 templates/cloud-init/99-hostname.cfg /etc/cloud/cloud.cfg.d/
 apt update && apt full-upgrade -y
 ```
 
@@ -76,9 +76,9 @@ a2enmod rewrite ssl deflate
 ```bash
 mariadb-secure-installation        # root nur per unix_socket, anonyme User entfernen
 mariadb <<'SQL'
-CREATE DATABASE bluemchen CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-CREATE USER 'bluemchen'@'localhost' IDENTIFIED BY '<DB_PASSWORT>';
-GRANT ALL PRIVILEGES ON bluemchen.* TO 'bluemchen'@'localhost';
+CREATE DATABASE forum CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE USER 'forum'@'localhost' IDENTIFIED BY '<DB_PASSWORT>';
+GRANT ALL PRIVILEGES ON forum.* TO 'forum'@'localhost';
 SQL
 ```
 
@@ -120,13 +120,13 @@ rsync -a <BACKUP>/forum/ /var/www/forum/
 chown -R www-data:www-data /var/www/forum
 chmod 640 /var/www/forum/config.php
 # Datenbank
-mariadb bluemchen < <BACKUP>/bluemchen.sql
+mariadb forum < <BACKUP>/forum.sql
 # phpBB-Cache leeren
 rm -rf /var/www/forum/cache/production/*
 ```
 
 - `config.php` enthält die DB-Zugangsdaten und muss zum neuen `<DB_PASSWORT>` passen.
-- Erweiterungen: `ext/bluemchen/{banner,blumenicons,impressum}`, `ext/phpbb/webpushnotifications` im ACP aktivieren bzw. prüfen.
+- Erweiterungen: eigene Erweiterungen unter `ext/<EXT_VENDOR>/` (Banner, Icons, Impressum) und `ext/phpbb/webpushnotifications` im ACP aktivieren bzw. prüfen.
 - Danach im ACP den Cache leeren und die Boardeinstellungen (Domain, Cookie-Domain, Server-Protokoll `https`) prüfen.
 
 ## 10. Cron und automatische Updates

@@ -53,7 +53,7 @@ Zu beachten:
 - Optionaler Zusatz-Dump der Datenbank (ohne Passwort, als root über den Socket):
 
 ```bash
-mariadb-dump --single-transaction --routines bluemchen | gzip > /pfad/bluemchen_$(date +%Y%m%d).sql.gz
+mariadb-dump --single-transaction --routines forum | gzip > /pfad/forum_$(date +%Y%m%d).sql.gz
 ```
 
 Für einen Neuaufbau aus Dateien und Dump (statt Komplett-Restore): siehe Schritt 9 in [02-bereitstellung.md](02-bereitstellung.md).

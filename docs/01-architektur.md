@@ -39,7 +39,7 @@ flowchart TB
         APA["Apache 2.4<br/>prefork + mod_php<br/>:80 / :443"]
         PHP["PHP 8.4<br/>(mod_php, OPcache)"]
         PHPBB["phpBB 3.3.19<br/>/var/www/forum"]
-        DB[("MariaDB 11.8<br/>127.0.0.1:3306<br/>DB: bluemchen")]
+        DB[("MariaDB 11.8<br/>127.0.0.1:3306<br/>DB: forum")]
         CB["certbot.timer<br/>Let's Encrypt"]
         CRON["cron<br/>04:00 Bildkompression"]
         MX["Externer SMTP<br/>(Mailanbieter)"]
@@ -128,6 +128,6 @@ flowchart TB
     ROOT --> LOG["/var/log/apache2<br/>forum_access.log, forum_error.log"]
     ROOT --> RT["/root<br/>Skripte, alte Backups"]
     WWW --> FILES["files/ (Anhänge)"]
-    WWW --> EXT["ext/ bluemchen, phpbb"]
+    WWW --> EXT["ext/ eigene Erweiterungen, phpbb"]
     WWW --> CFG["config.php (640, Geheimnis)"]
 ```
