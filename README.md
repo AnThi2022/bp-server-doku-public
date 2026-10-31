@@ -35,7 +35,7 @@ Unter **Windows** (PowerShell, nur Python und Chrome oder Edge nötig) gibt es `
 
 ```powershell
 py -m venv "$env:TEMP\bp-pdf-venv"
-& "$env:TEMP\bp-pdf-venv\Scripts\python.exe" -m pip install markdown==3.9 websocket-client==1.8.0
+& "$env:TEMP\bp-pdf-venv\Scripts\python.exe" -m pip install markdown==3.9 websocket-client==1.8.0 pymupdf==1.28.2
 Invoke-WebRequest -UseBasicParsing -OutFile "$env:TEMP\bp-pdf-venv\mermaid.min.js" -Uri https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist/mermaid.min.js
 & "$env:TEMP\bp-pdf-venv\Scripts\python.exe" scripts\export-pdf-windows.py --repo . --out ..\pdf\bp-server-doku-public.pdf `
   --title "phpBB-Server – Dokumentation" --subtitle "Öffentliche Fassung" --mermaid "$env:TEMP\bp-pdf-venv\mermaid.min.js"
