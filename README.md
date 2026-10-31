@@ -23,13 +23,15 @@ PDFs mit Inhaltsverzeichnis, Lesezeichen und gerenderten Diagrammen entstehen mi
 
 ```bash
 python3 -m venv /tmp/bp-pdf-venv
-/tmp/bp-pdf-venv/bin/pip install markdown weasyprint pillow
+/tmp/bp-pdf-venv/bin/pip install markdown weasyprint pillow pymupdf==1.28.2
 curl -sL -o /tmp/bp-pdf-venv/mermaid.min.js https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist/mermaid.min.js
 /tmp/bp-pdf-venv/bin/python scripts/export-pdf.py --repo . --out ../pdf/bp-server-doku-public.pdf \
   --title "phpBB-Server – Dokumentation" --subtitle "Öffentliche Fassung"
 ```
 
 Benötigt wird außerdem `firefox` (headless, rendert die Mermaid-Diagramme).
+
+Beide Exportskripte (Linux und Windows) erzeugen das gleiche Layout: Doppelrahmen auf jeder Seite, Cover mit Farbband, Tabellen mit Kopfzeile, Akzentbalken an Überschriften. Die Kapitel laufen fortlaufend (kompakt). Mit `--page-per-doc` beginnt jedes Dokument auf einer neuen Seite.
 
 Unter **Windows** (PowerShell, nur Python und Chrome oder Edge nötig) gibt es `scripts/export-pdf-windows.py`:
 

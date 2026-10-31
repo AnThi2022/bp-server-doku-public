@@ -67,7 +67,7 @@ code { font-family: Consolas, 'Courier New', monospace; font-size: 8.6pt; backgr
 pre { background: #f5f7fb; border: 0.6pt solid #cfd9ea; border-left: 3.5pt solid #2b5797; border-radius: 3pt; padding: 6pt 9pt; white-space: pre-wrap; overflow-wrap: anywhere; break-inside: avoid; }
 pre code { background: none; color: #1b1b1b; padding: 0; font-size: 8pt; }
 pre.mermaid { background: none; border: none; padding: 0; text-align: center; white-space: normal; }
-pre.mermaid svg { max-width: 100%; max-height: 215mm; height: auto; }
+pre.mermaid svg { max-width: 100%; max-height: 190mm; height: auto; }
 
 table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 9pt 0; font-size: 8.8pt;
         border: 0.8pt solid #9db4d8; border-radius: 4pt; }
@@ -85,10 +85,13 @@ tr { break-inside: avoid; }
 
 blockquote { margin: 8pt 0; padding: 5pt 10pt; border: 0.6pt solid #e4d28a; border-left: 4pt solid #c9a227; border-radius: 3pt; background: #fbf7e6; }
 hr { border: none; border-top: 0.8pt solid #c5d3ea; margin: 12pt 0; }
-section.doc { break-before: page; }
+/* Kapitel laufen standardmaessig fortlaufend; der erste Abschnitt und der Anhang beginnen auf neuer Seite */
+.toc + section.doc, section.appendix { break-before: page; }
+section.doc + section.doc { margin-top: 30pt; }
+h1 { break-after: avoid; }
 
 .cover { text-align: center; box-sizing: border-box; height: 250mm; padding-top: 38mm; overflow: hidden; break-after: page; }
-.cover .band { height: 7mm; margin: 0 -9mm; background: linear-gradient(90deg, #1f3f73, #2b5797 60%, #6f9ad6); }
+.cover .band { height: 7mm; margin: 0; background: linear-gradient(90deg, #1f3f73, #2b5797 60%, #6f9ad6); }
 .cover .band.bottom { margin-top: 24mm; }
 .cover h1 { font-size: 30pt; margin: 22mm 0 4mm; padding: 0; border: none; color: #1f3f73; }
 .cover .sub { font-size: 14pt; color: #555; }
@@ -136,7 +139,10 @@ def git_info(repo: Path) -> str:
         return "ohne Git-Stand"
 
 
-def build_html(repo: Path, title: str, subtitle: str, mermaid_js: str):
+PAGE_PER_DOC_CSS = "section.doc { break-before: page; } section.doc + section.doc { margin-top: 0; }"
+
+
+def build_html(repo: Path, title: str, subtitle: str, mermaid_js: str, page_per_doc: bool = False):
     files = collect_files(repo)
     ids = {f: doc_id(f) for f in files}
     sections, toc, n = [], [], 0
@@ -199,14 +205,14 @@ def build_html(repo: Path, title: str, subtitle: str, mermaid_js: str):
               "flowchart:{htmlLabels:true,useMaxWidth:true},sequence:{useMaxWidth:true}});"
               "function fit(pre){const s=pre.querySelector('svg');const vb=s.viewBox.baseVal;"
               "const w=vb&&vb.width?vb.width:s.getBBox().width, h=vb&&vb.height?vb.height:s.getBBox().height;"
-              "return Math.min(1, 650/w, 812/h);}"
+              "return Math.min(1, 650/w, 718/h);}"
               "mermaid.run({querySelector:'pre.mermaid'}).then(()=>{"
               "document.querySelectorAll('div.mpair').forEach(d=>{const [a,b]=d.querySelectorAll('pre.mermaid');"
               "(fit(b)>fit(a)*1.15?a:b).remove();});"
               "window.__done=true}).catch(e=>{window.__err=String(e);window.__done=true});"
               "</script>")
     doc = (f'<!doctype html><html lang="de"><head><meta charset="utf-8"><title>{html.escape(title)}</title>'
-           f"<style>{CSS}</style></head><body>{cover}{toc_html}{''.join(sections)}{appendix}{script}</body></html>")
+           f"<style>{CSS}{PAGE_PER_DOC_CSS if page_per_doc else ''}</style></head><body>{cover}{toc_html}{''.join(sections)}{appendix}{script}</body></html>")
     return doc, len(files), n
 
 
@@ -324,11 +330,13 @@ def main():
     ap.add_argument("--title", required=True)
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--mermaid", required=True)
+    ap.add_argument("--page-per-doc", action="store_true",
+                    help="jedes Dokument beginnt auf einer neuen Seite (Standard: fortlaufend, kompakter)")
     a = ap.parse_args()
     repo, out = Path(a.repo).resolve(), Path(a.out).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     mermaid_uri = Path(a.mermaid).resolve().as_uri()
-    doc, nfiles, ndiag = build_html(repo, a.title, a.subtitle, mermaid_uri)
+    doc, nfiles, ndiag = build_html(repo, a.title, a.subtitle, mermaid_uri, a.page_per_doc)
     html_file = Path(tempfile.gettempdir()) / "bp-pdf" / (out.stem + ".html")
     html_file.parent.mkdir(parents=True, exist_ok=True)
     html_file.write_text(doc, encoding="utf-8")

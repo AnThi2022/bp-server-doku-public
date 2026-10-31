@@ -4,7 +4,7 @@
 Voraussetzungen (alles temporär, ändert das System nicht):
 
     python3 -m venv /tmp/bp-pdf-venv
-    /tmp/bp-pdf-venv/bin/pip install markdown weasyprint pillow
+    /tmp/bp-pdf-venv/bin/pip install markdown weasyprint pillow pymupdf==1.28.2
     curl -sL -o /tmp/bp-pdf-venv/mermaid.min.js \
         https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist/mermaid.min.js
 
@@ -19,6 +19,9 @@ Aufruf:
 Reihenfolge: README.md, docs/*.md, docs/adr/*.md, config|templates/README.md,
 danach als Anhang alle Dateien aus config/ bzw. templates/.
 Das PDF enthält Lesezeichen, Inhaltsverzeichnis mit Seitenzahlen und die Diagramme als Bilder.
+Optik: Doppelrahmen auf jeder Seite (nachträglich mit PyMuPDF gezeichnet; fehlt PyMuPDF, entsteht das PDF
+ohne Rahmen), Cover mit Farbband, Tabellen mit Kopfzeile und Zebra-Zeilen, Code-Blöcke mit Akzentkante.
+Kapitel laufen fortlaufend (kompakt); mit --page-per-doc beginnt jedes Dokument auf einer neuen Seite.
 """
 import argparse
 import base64
@@ -43,35 +46,66 @@ MERMAID_JS = VENV / "mermaid.min.js"
 HOLD_SECONDS = 3.0  # so lange hält der Testserver das Laden an, bis Mermaid fertig gerendert hat
 
 CSS = """
-@page { size: A4; margin: 20mm 17mm 20mm 17mm;
-  @top-right { content: string(doctitle); font-size: 8pt; color: #777; }
-  @bottom-center { content: counter(page) " / " counter(pages); font-size: 8pt; color: #777; } }
+@page { size: A4; margin: 20mm 18mm 22mm 18mm;
+  @top-right { content: string(doctitle); font-size: 8pt; color: #1f3f73; }
+  @bottom-center { content: counter(page) " / " counter(pages); font-size: 8pt; color: #1f3f73; } }
 @page :first { @top-right { content: none; } @bottom-center { content: none; } }
 html { font-family: 'Liberation Sans', 'Noto Sans', sans-serif; font-size: 10pt; line-height: 1.45; color: #1b1b1b; }
-h1 { font-size: 20pt; border-bottom: 2px solid #2b5797; padding-bottom: 4pt; margin-top: 0; string-set: doctitle content(); }
-h2 { font-size: 14pt; margin-top: 18pt; color: #2b5797; break-after: avoid; }
-h3 { font-size: 11.5pt; margin-top: 14pt; break-after: avoid; }
+/* Der Seitenrahmen entsteht nach dem Schreiben des PDFs (add_frame, PyMuPDF). */
+
+h1 { font-size: 20pt; color: #1f3f73; margin-top: 0; padding: 0 0 5pt 0; border-bottom: 1.5pt solid #2b5797;
+     line-height: 1.2; break-after: avoid; string-set: doctitle content(); }
+/* Akzentbalken als Inline-Element, damit er an Seitenumbruechen nicht abreisst */
+h1::before { content: ""; display: inline-block; width: 5pt; height: 0.95em; margin-right: 9pt;
+             background: #2b5797; vertical-align: -0.12em; }
+h2 { font-size: 14pt; margin-top: 18pt; color: #2b5797; padding-bottom: 2pt; border-bottom: 0.6pt solid #c5d3ea; break-after: avoid; }
+h3 { font-size: 11.5pt; margin-top: 14pt; color: #1f3f73; break-after: avoid; }
 h4 { font-size: 10.5pt; break-after: avoid; }
+h1 code { font-size: inherit; background: none; color: inherit; padding: 0; }
 p, li { orphans: 3; widows: 3; }
 a { color: #1a5fb4; text-decoration: none; }
-code { font-family: 'DejaVu Sans Mono', 'Liberation Mono', monospace; font-size: 8.6pt; background: #f1f1f1; padding: 0 2pt; border-radius: 2pt; overflow-wrap: anywhere; }
-pre { background: #f6f6f6; border: 1px solid #ddd; border-radius: 3pt; padding: 6pt 8pt; white-space: pre-wrap; overflow-wrap: anywhere; break-inside: avoid-page; }
-pre code { background: none; padding: 0; font-size: 8pt; }
-table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 8.8pt; }
-th, td { border: 1px solid #c9c9c9; padding: 3pt 5pt; vertical-align: top; text-align: left; overflow-wrap: break-word; }
-th { background: #eaf0f8; }
+code { font-family: 'DejaVu Sans Mono', 'Liberation Mono', monospace; font-size: 8.6pt; background: #eef2f9; color: #1f3f73; padding: 0 2pt; border-radius: 2pt; overflow-wrap: anywhere; }
+pre { background: #f5f7fb; border: 0.6pt solid #cfd9ea; border-left: 3.5pt solid #2b5797; border-radius: 3pt; padding: 6pt 9pt; white-space: pre-wrap; overflow-wrap: anywhere; break-inside: avoid-page; }
+pre code { background: none; color: #1b1b1b; padding: 0; font-size: 8pt; }
+
+table { border-collapse: separate; border-spacing: 0; width: 100%; margin: 9pt 0; font-size: 8.8pt;
+        border: 0.8pt solid #9db4d8; border-radius: 4pt; }
+th, td { padding: 3.5pt 6pt; vertical-align: top; text-align: left; overflow-wrap: break-word;
+         border-right: 0.5pt solid #dbe4f3; border-bottom: 0.5pt solid #dbe4f3; }
+th:last-child, td:last-child { border-right: none; }
+tbody tr:last-child td { border-bottom: none; }
+th { background: #2b5797; color: #fff; font-weight: 600; border-right-color: #4a76b8; border-bottom: none; }
+th:first-child { border-top-left-radius: 3pt; }
+th:last-child { border-top-right-radius: 3pt; }
+tbody tr:nth-child(even) td { background: #f3f6fb; }
+tbody tr:last-child td:first-child { border-bottom-left-radius: 3pt; }
+tbody tr:last-child td:last-child { border-bottom-right-radius: 3pt; }
 tr { break-inside: avoid; }
-blockquote { margin: 8pt 0; padding: 4pt 10pt; border-left: 3pt solid #c9a227; background: #fbf7e6; }
-img.diagram { display: block; margin: 8pt auto; max-width: 100%; max-height: 215mm; break-inside: avoid; }
-section.doc { break-before: page; }
-.cover { text-align: center; padding-top: 70mm; }
-.cover h1 { font-size: 28pt; border: none; string-set: none; }
+
+blockquote { margin: 8pt 0; padding: 5pt 10pt; border: 0.6pt solid #e4d28a; border-left: 4pt solid #c9a227; border-radius: 3pt; background: #fbf7e6; }
+hr { border: none; border-top: 0.8pt solid #c5d3ea; margin: 12pt 0; }
+img.diagram { display: block; margin: 8pt auto; max-width: 100%; max-height: 190mm; break-inside: avoid; }
+
+/* Kapitel laufen standardmaessig fortlaufend; der erste Abschnitt und der Anhang beginnen auf neuer Seite */
+.toc + section.doc, section.appendix { break-before: page; }
+section.doc + section.doc { margin-top: 30pt; }
+
+.cover { text-align: center; box-sizing: border-box; height: 250mm; padding-top: 38mm; overflow: hidden; break-after: page; }
+.cover .band { height: 7mm; margin: 0; background: linear-gradient(90deg, #1f3f73, #2b5797 60%, #6f9ad6); }
+.cover .band.bottom { margin-top: 24mm; }
+.cover h1 { font-size: 30pt; margin: 22mm 0 4mm; padding: 0; border: none; color: #1f3f73; string-set: none; }
+.cover h1::before { display: none; }
 .cover .sub { font-size: 14pt; color: #555; }
-.cover .meta { margin-top: 30mm; color: #666; font-size: 10pt; }
+.cover .rule { width: 40mm; height: 0; margin: 10mm auto 0; border-top: 2pt solid #c9a227; }
+.cover .meta { display: inline-block; margin-top: 26mm; padding: 6pt 22pt; color: #444; font-size: 10pt;
+               border: 0.8pt solid #9db4d8; border-radius: 4pt; background: #f5f7fb; line-height: 1.7; }
+
 .toc { break-before: page; }
 .toc h1 { string-set: doctitle "Inhaltsverzeichnis"; }
-.toc ol { list-style: none; padding: 0; }
-.toc li { margin: 4pt 0; }
+.toc ol { list-style: none; padding: 0; counter-reset: t; }
+.toc li { counter-increment: t; margin: 5pt 0; padding: 5pt 10pt; border: 0.6pt solid #cfd9ea;
+          border-left: 3.5pt solid #2b5797; border-radius: 3pt; background: #f9fbfe; break-inside: avoid; }
+.toc li::before { content: counter(t) "."; display: inline-block; width: 18pt; color: #2b5797; font-weight: 600; }
 .toc a::after { content: leader('.') target-counter(attr(href), page); }
 .appendix h3 { font-family: 'DejaVu Sans Mono', monospace; font-size: 9.5pt; }
 """
@@ -174,12 +208,42 @@ def git_info(repo: Path) -> str:
         return "ohne Git-Stand"
 
 
+PAGE_PER_DOC_CSS = "section.doc { break-before: page; } section.doc + section.doc { margin-top: 0; }"
+
+
+def add_frame(pdf: Path) -> bool:
+    """Zeichnet auf jede Seite einen Doppelrahmen (aussen kraeftig, innen fein).
+
+    Kopf- und Fusszeile (WeasyPrint-Randboxen) liegen innerhalb des Rahmens. Fehlt PyMuPDF,
+    bleibt das PDF ohne Rahmen (sonst unveraendert).
+    """
+    try:
+        import pymupdf
+    except ImportError:
+        print("Hinweis: pymupdf fehlt, PDF entsteht ohne Seitenrahmen (pip install pymupdf)")
+        return False
+    doc = pymupdf.open(str(pdf))
+    for page in doc:
+        r = page.rect
+        outer = pymupdf.Rect(r.x0 + 20, r.y0 + 20, r.x1 - 20, r.y1 - 20)
+        inner = pymupdf.Rect(outer.x0 + 4, outer.y0 + 4, outer.x1 - 4, outer.y1 - 4)
+        page.draw_rect(outer, color=(0.122, 0.247, 0.451), width=1.4, radius=0.012)
+        page.draw_rect(inner, color=(0.616, 0.706, 0.847), width=0.4, radius=0.01)
+    tmp = pdf.with_suffix(".tmp.pdf")
+    doc.save(str(tmp), garbage=3, deflate=True)
+    doc.close()
+    tmp.replace(pdf)
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default=".")
     ap.add_argument("--out", required=True)
     ap.add_argument("--title", required=True)
     ap.add_argument("--subtitle", default="")
+    ap.add_argument("--page-per-doc", action="store_true",
+                    help="jedes Dokument beginnt auf einer neuen Seite (Standard: fortlaufend, kompakter)")
     args = ap.parse_args()
 
     repo = Path(args.repo).resolve()
@@ -199,9 +263,9 @@ def main():
                 body = md.convert(text)
 
                 def fit_scale(png_bytes):
-                    # Faktor, mit dem das Bild in den Satzspiegel (176 x 215 mm bei 192 dpi) passt
+                    # Faktor, mit dem das Bild in den Satzspiegel (174 x 190 mm bei 192 dpi) passt
                     w, h = Image.open(io.BytesIO(png_bytes)).size
-                    return min(1330 / w, 1625 / h)
+                    return min(1315 / w, 1437 / h)
 
                 def diagram(m):
                     nonlocal n
@@ -252,12 +316,15 @@ def main():
         toc_html = ('<section class="toc"><h1>Inhaltsverzeichnis</h1><ol>'
                     + "".join(f'<li><a href="#{i}">{html.escape(t)}</a></li>' for i, t, _ in toc)
                     + "</ol></section>")
-        cover = (f'<section class="cover"><h1>{html.escape(args.title)}</h1>'
-                 f'<div class="sub">{html.escape(args.subtitle)}</div>'
-                 f'<div class="meta">Stand: {datetime.date.today():%d.%m.%Y}<br>{html.escape(git_info(repo))}</div></section>')
+        cover = (f'<section class="cover"><div class="band"></div><h1>{html.escape(args.title)}</h1>'
+                 f'<div class="sub">{html.escape(args.subtitle)}</div><div class="rule"></div>'
+                 f'<div class="meta">Stand: {datetime.date.today():%d.%m.%Y}<br>{html.escape(git_info(repo))}</div>'
+                 f'<div class="band bottom"></div></section>')
+        extra_css = PAGE_PER_DOC_CSS if args.page_per_doc else ""
         doc = (f'<!doctype html><html lang="de"><head><meta charset="utf-8"><title>{html.escape(args.title)}</title>'
-               f"<style>{CSS}</style></head><body>{cover}{toc_html}{''.join(sections)}{appendix}</body></html>")
+               f"<style>{CSS}{extra_css}</style></head><body>{cover}{toc_html}{''.join(sections)}{appendix}</body></html>")
         HTML(string=doc, base_url=str(repo)).write_pdf(str(out))
+        add_frame(out)
     print(f"PDF: {out} ({out.stat().st_size // 1024} KB), {len(files)} Dokumente, {n} Diagramme")
 
 
