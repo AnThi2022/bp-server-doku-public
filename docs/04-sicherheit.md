@@ -11,6 +11,7 @@
 | Updates | `unattended-upgrades` für Sicherheitsupdates |
 | Apache | `TraceEnable Off`; Versionsangaben reduzieren (`ServerTokens Prod`, `ServerSignature Off`) |
 | phpBB | `config.php` mit Mode 640, Installationsverzeichnis nach dem Setup entfernen, keine Test- oder Debug-Dateien (z. B. `phpinfo.php`) im Web-Root |
+| Backup | nächtliches Gesamt-Backup des Servers durch den Hosting-Anbieter |
 | Mail | externer Mailanbieter per SMTP, kein lokaler MTA |
 
 ## Geheimnisse

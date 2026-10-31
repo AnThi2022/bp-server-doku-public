@@ -40,19 +40,23 @@ Erneuerung läuft über `certbot.timer`. Die Erneuerung benötigt Port 80 und de
 
 ## Backup und Restore
 
-Backups liegen **nicht** auf dem Server selbst, sondern auf einem separaten Volume oder extern. Das Backup-Konzept (Rhythmus, Aufbewahrung, Restore-Test) wird im privaten Betriebs-Repo geführt.
+Das Backup-Konzept ist die **nächtliche Sicherung des gesamten Servers durch Hetzner** (Hetzner Cloud Backups). Sie umfasst die komplette Platte: System, Konfiguration, phpBB-Dateien und Datenbank. Es gibt keine eigenen Backup-Jobs auf dem Server.
 
-Manuelles Backup (Zugangsdaten **nicht** auf der Kommandozeile angeben, sondern über `~/.my.cnf` mit Mode 600 oder `unix_socket` als root):
+Wiederherstellung über die Hetzner Cloud Console: Server → Backups → Backup wiederherstellen (überschreibt den Server) oder aus dem Backup einen neuen Server erstellen. Die Console-Schritte sind nicht durch einen Test belegt.
+
+Zu beachten:
+
+- Die Sicherung ist ein Abbild der laufenden Platte. Die Datenbank (InnoDB) ist darin „crash-konsistent“ und wird beim Start per Recovery wieder konsistent, ist aber kein logischer Dump.
+- Hetzner hält nur eine begrenzte Zahl Sicherungen vor (Standard: 7, tägliches Zeitfenster). Eigene Einstellung in der Console prüfen.
+- Angehängte Hetzner-Volumes sind in Server-Backups nicht enthalten. Aktuell sind keine eingehängt.
+- Vor riskanten Änderungen (phpBB-Update, Paket-Upgrade) zusätzlich einen manuellen Snapshot in der Console anlegen.
+- Optionaler Zusatz-Dump der Datenbank (ohne Passwort, als root über den Socket):
 
 ```bash
-# Datenbank, konsistent
 mariadb-dump --single-transaction --routines bluemchen | gzip > /pfad/bluemchen_$(date +%Y%m%d).sql.gz
-
-# Dateien
-rsync -a /var/www/forum/ /pfad/forum/
 ```
 
-Restore: siehe Schritt 9 in [02-bereitstellung.md](02-bereitstellung.md).
+Für einen Neuaufbau aus Dateien und Dump (statt Komplett-Restore): siehe Schritt 9 in [02-bereitstellung.md](02-bereitstellung.md).
 
 ## Abnahme nach Reboot oder Neuaufbau
 
